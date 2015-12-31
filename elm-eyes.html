@@ -8477,6 +8477,73 @@ Elm.Native.Touch.make = function(localRuntime) {
 
 	return localRuntime.Native.Touch.values = { touches: touches, taps: taps };
 };
+Elm.Native = Elm.Native || {};
+Elm.Native.Window = {};
+Elm.Native.Window.make = function make(localRuntime) {
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Window = localRuntime.Native.Window || {};
+	if (localRuntime.Native.Window.values)
+	{
+		return localRuntime.Native.Window.values;
+	}
+
+	var NS = Elm.Native.Signal.make(localRuntime);
+	var Tuple2 = Elm.Native.Utils.make(localRuntime).Tuple2;
+
+
+	function getWidth()
+	{
+		return localRuntime.node.clientWidth;
+	}
+
+
+	function getHeight()
+	{
+		if (localRuntime.isFullscreen())
+		{
+			return window.innerHeight;
+		}
+		return localRuntime.node.clientHeight;
+	}
+
+
+	var dimensions = NS.input('Window.dimensions', Tuple2(getWidth(), getHeight()));
+
+
+	function resizeIfNeeded()
+	{
+		// Do not trigger event if the dimensions have not changed.
+		// This should be most of the time.
+		var w = getWidth();
+		var h = getHeight();
+		if (dimensions.value._0 === w && dimensions.value._1 === h)
+		{
+			return;
+		}
+
+		setTimeout(function() {
+			// Check again to see if the dimensions have changed.
+			// It is conceivable that the dimensions have changed
+			// again while some other event was being processed.
+			w = getWidth();
+			h = getHeight();
+			if (dimensions.value._0 === w && dimensions.value._1 === h)
+			{
+				return;
+			}
+			localRuntime.notify(dimensions.id, Tuple2(w, h));
+		}, 0);
+	}
+
+
+	localRuntime.addListener([dimensions.id], window, 'resize', resizeIfNeeded);
+
+
+	return localRuntime.Native.Window.values = {
+		dimensions: dimensions,
+		resizeIfNeeded: resizeIfNeeded
+	};
+};
 Elm.Touch = Elm.Touch || {};
 Elm.Touch.make = function (_elm) {
    "use strict";
@@ -8488,6 +8555,17 @@ Elm.Touch.make = function (_elm) {
    var touches = $Native$Touch.touches;
    var Touch = F6(function (a,b,c,d,e,f) {    return {x: a,y: b,id: c,x0: d,y0: e,t0: f};});
    return _elm.Touch.values = {_op: _op,touches: touches,taps: taps,Touch: Touch};
+};Elm.Window = Elm.Window || {};
+Elm.Window.make = function (_elm) {
+   "use strict";
+   _elm.Window = _elm.Window || {};
+   if (_elm.Window.values) return _elm.Window.values;
+   var _U = Elm.Native.Utils.make(_elm),$Basics = Elm.Basics.make(_elm),$Native$Window = Elm.Native.Window.make(_elm),$Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var dimensions = $Native$Window.dimensions;
+   var width = A2($Signal.map,$Basics.fst,dimensions);
+   var height = A2($Signal.map,$Basics.snd,dimensions);
+   return _elm.Window.values = {_op: _op,dimensions: dimensions,width: width,height: height};
 };Elm.Native.Effects = {};
 Elm.Native.Effects.make = function(localRuntime) {
 
@@ -10680,53 +10758,67 @@ Elm.Face.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $Time = Elm.Time.make(_elm),
-   $Touch = Elm.Touch.make(_elm);
+   $Touch = Elm.Touch.make(_elm),
+   $Window = Elm.Window.make(_elm);
    var _op = {};
    var delta = A2($Signal.map,$Time.inSeconds,$Time.fps(30));
+   var noFx = function (model) {    return {ctor: "_Tuple2",_0: model,_1: $Effects.none};};
+   var Click = function (a) {    return {ctor: "Click",_0: a};};
+   var Dimensions = function (a) {    return {ctor: "Dimensions",_0: a};};
+   var NoOp = {ctor: "NoOp"};
    var input = A2($Signal.sampleOn,
    delta,
-   $Signal.mergeMany(_U.list([A2($Signal.map,$Maybe.Just,$Mouse.position)
+   $Signal.mergeMany(_U.list([A2($Signal.map,Dimensions,$Window.dimensions)
+                             ,A2($Signal.map,Click,$Mouse.position)
                              ,A2($Signal.map,
-                             A2($List.foldr,F2(function (t,_p0) {    return $Maybe.Just({ctor: "_Tuple2",_0: t.x,_1: t.y});}),$Maybe.Nothing),
+                             A2($List.foldr,F2(function (t,_p0) {    return Click({ctor: "_Tuple2",_0: t.x,_1: t.y});}),NoOp),
                              $Touch.touches)])));
-   var noFx = function (model) {    return {ctor: "_Tuple2",_0: model,_1: $Effects.none};};
-   var init = function (_p1) {    var _p2 = _p1;return noFx({leftEye: A2($Eye.init,0.0,0.0),rightEye: A2($Eye.init,0.0,0.0)});};
-   var Model = F2(function (a,b) {    return {leftEye: a,rightEye: b};});
-   var _p3 = {ctor: "_Tuple2",_0: 75,_1: 0};
-   var rightEyeX = _p3._0;
-   var rightEyeY = _p3._1;
-   var _p4 = {ctor: "_Tuple2",_0: -75,_1: 50};
-   var leftEyeX = _p4._0;
-   var leftEyeY = _p4._1;
-   var _p5 = {ctor: "_Tuple2",_0: 150,_1: 175};
-   var halfWidth = _p5._0;
-   var halfHeight = _p5._1;
+   var Visible = {ctor: "Visible"};
+   var Hidden = {ctor: "Hidden"};
+   var init = noFx({leftEye: A2($Eye.init,0.0,0.0),rightEye: A2($Eye.init,0.0,0.0),width: 0,height: 0,visibility: Hidden});
+   var Model = F5(function (a,b,c,d,e) {    return {leftEye: a,rightEye: b,width: c,height: d,visibility: e};});
+   var _p1 = {ctor: "_Tuple2",_0: 75,_1: 0};
+   var rightEyeX = _p1._0;
+   var rightEyeY = _p1._1;
+   var _p2 = {ctor: "_Tuple2",_0: -75,_1: 50};
+   var leftEyeX = _p2._0;
+   var leftEyeY = _p2._1;
    var update = F2(function (action,model) {
-      var _p6 = action;
-      if (_p6.ctor === "Nothing") {
-            return noFx(model);
-         } else {
-            var _p8 = _p6._0._1;
-            var _p7 = _p6._0._0;
-            return noFx({leftEye: A2($Eye.update,
-                        {mouseX: $Basics.toFloat(_p7) - halfWidth - leftEyeX,mouseY: halfHeight - $Basics.toFloat(_p8) - leftEyeY},
-                        model.leftEye)
-                        ,rightEye: A2($Eye.update,
-                        {mouseX: $Basics.toFloat(_p7) - halfWidth - rightEyeX,mouseY: halfHeight - $Basics.toFloat(_p8) - rightEyeY},
-                        model.rightEye)});
-         }
+      var _p3 = action;
+      switch (_p3.ctor)
+      {case "NoOp": return noFx(model);
+         case "Dimensions": return noFx(_U.update(model,{width: _p3._0._0,height: _p3._0._1,visibility: Visible}));
+         default: var _p5 = _p3._0._1;
+           var _p4 = _p3._0._0;
+           return noFx(_U.update(model,
+           {leftEye: A2($Eye.update,
+           {mouseX: $Basics.toFloat(_p4) - $Basics.toFloat(model.width) / 2 - leftEyeX
+           ,mouseY: $Basics.toFloat(model.height) / 2 - $Basics.toFloat(_p5) - leftEyeY},
+           model.leftEye)
+           ,rightEye: A2($Eye.update,
+           {mouseX: $Basics.toFloat(_p4) - $Basics.toFloat(model.width) / 2 - rightEyeX
+           ,mouseY: $Basics.toFloat(model.height) / 2 - $Basics.toFloat(_p5) - rightEyeY},
+           model.rightEye)}));}
    });
+   var viewFace = function (model) {
+      var _p6 = model.visibility;
+      if (_p6.ctor === "Hidden") {
+            return A2($Html.div,_U.list([]),_U.list([]));
+         } else {
+            return $Html.fromElement(A3($Graphics$Collage.collage,
+            model.width,
+            model.height,
+            _U.list([A2($Graphics$Collage.move,{ctor: "_Tuple2",_0: leftEyeX,_1: leftEyeY},$Eye.view(model.leftEye))
+                    ,A2($Graphics$Collage.move,{ctor: "_Tuple2",_0: rightEyeX,_1: rightEyeY},$Eye.view(model.rightEye))])));
+         }
+   };
+   var view = F2(function (_p7,model) {    return A2($Html$Lazy.lazy,viewFace,model);});
+   var _p8 = {ctor: "_Tuple2",_0: 150,_1: 175};
+   var halfWidth = _p8._0;
+   var halfHeight = _p8._1;
    var _p9 = {ctor: "_Tuple2",_0: 300,_1: 350};
    var width = _p9._0;
    var height = _p9._1;
-   var viewFace = function (model) {
-      return $Html.fromElement(A3($Graphics$Collage.collage,
-      width,
-      height,
-      _U.list([A2($Graphics$Collage.move,{ctor: "_Tuple2",_0: leftEyeX,_1: leftEyeY},$Eye.view(model.leftEye))
-              ,A2($Graphics$Collage.move,{ctor: "_Tuple2",_0: rightEyeX,_1: rightEyeY},$Eye.view(model.rightEye))])));
-   };
-   var view = F2(function (_p10,model) {    return A2($Html$Lazy.lazy,viewFace,model);});
    return _elm.Face.values = {_op: _op
                              ,height: height
                              ,width: width
@@ -10737,6 +10829,11 @@ Elm.Face.make = function (_elm) {
                              ,rightEyeX: rightEyeX
                              ,rightEyeY: rightEyeY
                              ,Model: Model
+                             ,Hidden: Hidden
+                             ,Visible: Visible
+                             ,NoOp: NoOp
+                             ,Dimensions: Dimensions
+                             ,Click: Click
                              ,noFx: noFx
                              ,init: init
                              ,update: update
@@ -10759,7 +10856,7 @@ Elm.Main.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $StartApp = Elm.StartApp.make(_elm);
    var _op = {};
-   var app = $StartApp.start({init: $Face.init({ctor: "_Tuple0"}),inputs: _U.list([$Face.input]),update: $Face.update,view: $Face.view});
+   var app = $StartApp.start({init: $Face.init,inputs: _U.list([$Face.input]),update: $Face.update,view: $Face.view});
    var main = app.html;
    return _elm.Main.values = {_op: _op,app: app,main: main};
 };</script></head><body><script type="text/javascript">Elm.fullscreen(Elm.Main)</script></body></html>
