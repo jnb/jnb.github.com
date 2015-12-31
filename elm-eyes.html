@@ -10685,9 +10685,9 @@ Elm.Face.make = function (_elm) {
    var delta = A2($Signal.map,$Time.inSeconds,$Time.fps(30));
    var input = A2($Signal.sampleOn,
    delta,
-   $Signal.mergeMany(_U.list([$Mouse.position
+   $Signal.mergeMany(_U.list([A2($Signal.map,$Maybe.Just,$Mouse.position)
                              ,A2($Signal.map,
-                             A2($List.foldl,F2(function (t,_p0) {    return {ctor: "_Tuple2",_0: t.x,_1: t.y};}),{ctor: "_Tuple2",_0: 0,_1: 0}),
+                             A2($List.foldr,F2(function (t,_p0) {    return $Maybe.Just({ctor: "_Tuple2",_0: t.x,_1: t.y});}),$Maybe.Nothing),
                              $Touch.touches)])));
    var noFx = function (model) {    return {ctor: "_Tuple2",_0: model,_1: $Effects.none};};
    var init = function (_p1) {    var _p2 = _p1;return noFx({leftEye: A2($Eye.init,0.0,0.0),rightEye: A2($Eye.init,0.0,0.0)});};
@@ -10703,14 +10703,18 @@ Elm.Face.make = function (_elm) {
    var halfHeight = _p5._1;
    var update = F2(function (action,model) {
       var _p6 = action;
-      var _p8 = _p6._1;
-      var _p7 = _p6._0;
-      return noFx({leftEye: A2($Eye.update,
-                  {mouseX: $Basics.toFloat(_p7) - halfWidth - leftEyeX,mouseY: halfHeight - $Basics.toFloat(_p8) - leftEyeY},
-                  model.leftEye)
-                  ,rightEye: A2($Eye.update,
-                  {mouseX: $Basics.toFloat(_p7) - halfWidth - rightEyeX,mouseY: halfHeight - $Basics.toFloat(_p8) - rightEyeY},
-                  model.rightEye)});
+      if (_p6.ctor === "Nothing") {
+            return noFx(model);
+         } else {
+            var _p8 = _p6._0._1;
+            var _p7 = _p6._0._0;
+            return noFx({leftEye: A2($Eye.update,
+                        {mouseX: $Basics.toFloat(_p7) - halfWidth - leftEyeX,mouseY: halfHeight - $Basics.toFloat(_p8) - leftEyeY},
+                        model.leftEye)
+                        ,rightEye: A2($Eye.update,
+                        {mouseX: $Basics.toFloat(_p7) - halfWidth - rightEyeX,mouseY: halfHeight - $Basics.toFloat(_p8) - rightEyeY},
+                        model.rightEye)});
+         }
    });
    var _p9 = {ctor: "_Tuple2",_0: 300,_1: 350};
    var width = _p9._0;
