@@ -10685,33 +10685,36 @@ Elm.Face.make = function (_elm) {
    var delta = A2($Signal.map,$Time.inSeconds,$Time.fps(30));
    var input = A2($Signal.sampleOn,
    delta,
-   $Signal.mergeMany(_U.list([$Mouse.position,A2($Signal.map,function (t) {    return {ctor: "_Tuple2",_0: t.x,_1: t.y};},$Touch.taps)])));
+   $Signal.mergeMany(_U.list([$Mouse.position
+                             ,A2($Signal.map,
+                             A2($List.foldl,F2(function (t,_p0) {    return {ctor: "_Tuple2",_0: t.x,_1: t.y};}),{ctor: "_Tuple2",_0: 0,_1: 0}),
+                             $Touch.touches)])));
    var noFx = function (model) {    return {ctor: "_Tuple2",_0: model,_1: $Effects.none};};
-   var init = function (_p0) {    var _p1 = _p0;return noFx({leftEye: A2($Eye.init,0.0,0.0),rightEye: A2($Eye.init,0.0,0.0)});};
+   var init = function (_p1) {    var _p2 = _p1;return noFx({leftEye: A2($Eye.init,0.0,0.0),rightEye: A2($Eye.init,0.0,0.0)});};
    var Model = F2(function (a,b) {    return {leftEye: a,rightEye: b};});
-   var _p2 = {ctor: "_Tuple2",_0: 75,_1: 0};
-   var rightEyeX = _p2._0;
-   var rightEyeY = _p2._1;
-   var _p3 = {ctor: "_Tuple2",_0: -75,_1: 50};
-   var leftEyeX = _p3._0;
-   var leftEyeY = _p3._1;
-   var _p4 = {ctor: "_Tuple2",_0: 150,_1: 175};
-   var halfWidth = _p4._0;
-   var halfHeight = _p4._1;
+   var _p3 = {ctor: "_Tuple2",_0: 75,_1: 0};
+   var rightEyeX = _p3._0;
+   var rightEyeY = _p3._1;
+   var _p4 = {ctor: "_Tuple2",_0: -75,_1: 50};
+   var leftEyeX = _p4._0;
+   var leftEyeY = _p4._1;
+   var _p5 = {ctor: "_Tuple2",_0: 150,_1: 175};
+   var halfWidth = _p5._0;
+   var halfHeight = _p5._1;
    var update = F2(function (action,model) {
-      var _p5 = action;
-      var _p7 = _p5._1;
-      var _p6 = _p5._0;
+      var _p6 = action;
+      var _p8 = _p6._1;
+      var _p7 = _p6._0;
       return noFx({leftEye: A2($Eye.update,
-                  {mouseX: $Basics.toFloat(_p6) - halfWidth - leftEyeX,mouseY: halfHeight - $Basics.toFloat(_p7) - leftEyeY},
+                  {mouseX: $Basics.toFloat(_p7) - halfWidth - leftEyeX,mouseY: halfHeight - $Basics.toFloat(_p8) - leftEyeY},
                   model.leftEye)
                   ,rightEye: A2($Eye.update,
-                  {mouseX: $Basics.toFloat(_p6) - halfWidth - rightEyeX,mouseY: halfHeight - $Basics.toFloat(_p7) - rightEyeY},
+                  {mouseX: $Basics.toFloat(_p7) - halfWidth - rightEyeX,mouseY: halfHeight - $Basics.toFloat(_p8) - rightEyeY},
                   model.rightEye)});
    });
-   var _p8 = {ctor: "_Tuple2",_0: 300,_1: 350};
-   var width = _p8._0;
-   var height = _p8._1;
+   var _p9 = {ctor: "_Tuple2",_0: 300,_1: 350};
+   var width = _p9._0;
+   var height = _p9._1;
    var viewFace = function (model) {
       return $Html.fromElement(A3($Graphics$Collage.collage,
       width,
@@ -10719,7 +10722,7 @@ Elm.Face.make = function (_elm) {
       _U.list([A2($Graphics$Collage.move,{ctor: "_Tuple2",_0: leftEyeX,_1: leftEyeY},$Eye.view(model.leftEye))
               ,A2($Graphics$Collage.move,{ctor: "_Tuple2",_0: rightEyeX,_1: rightEyeY},$Eye.view(model.rightEye))])));
    };
-   var view = F2(function (_p9,model) {    return A2($Html$Lazy.lazy,viewFace,model);});
+   var view = F2(function (_p10,model) {    return A2($Html$Lazy.lazy,viewFace,model);});
    return _elm.Face.values = {_op: _op
                              ,height: height
                              ,width: width
